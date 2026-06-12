@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <title>用友银企联 · 智能报价</title>
+    <!-- CDN Libraries -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Fonts -->
+    
+    <!-- Shared Styles -->
+    <link rel="stylesheet" href="./shared/common.css">
+</head>
+<body>
+    <div class="content-scroll">
+        <!-- 智能报价模块 - 子页面 -->
+<style>
+/* ===== 智能报价模块样式 ===== */
+.quote-module { font-family: 'Inter', 'Noto Sans SC', system-ui, sans-serif; }
+.quote-module .card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 24px; border: 1px solid #e2e8f0; }
+.quote-module .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0; }
+.quote-module .card-title { font-size: 1.1rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px; }
+
+.quote-module .form-group { display: flex; flex-direction: column; gap: 6px; }
+.quote-module .form-label { font-size: 0.85rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+.quote-module .form-input,
+.quote-module .form-select { padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 0.95rem; font-family: inherit; transition: all 0.2s; background: white; }
+.quote-module .form-input:focus,
+.quote-module .form-select:focus { outline: none; border-color: #2a5298; box-shadow: 0 0 0 3px rgba(42,82,152,0.1); }
+
+/* radio-group */
+.quote-module .radio-group { display: flex; gap: 10px; }
+.quote-module .radio-card { flex: 1; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; text-align: center; cursor: pointer; transition: all 0.2s; background: white; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.quote-module .radio-card.active { border-color: #1e3c72; background: #eff6ff; color: #1e3c72; font-weight: 600; }
+.quote-module .radio-card input[type="radio"] { display: none; }
+
+/* 产品区域分组 */
+.quote-module .product-section { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-top: 4px; }
+.quote-module .product-section-title { font-size: 0.8rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+
+/* product-grid */
+.quote-module .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.quote-module .product-checkbox { position: relative; padding: 10px 8px; border: 2px solid #e2e8f0; border-radius: 10px; text-align: center; cursor: pointer; transition: all 0.2s; background: white; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; min-height: 44px; }
+.quote-module .product-checkbox:hover { border-color: #2a5298; box-shadow: 0 2px 8px rgba(42,82,152,0.08); }
+.quote-module .product-checkbox.selected { border-color: #1e3c72; background: #eff6ff; color: #1e3c72; font-weight: 600; box-shadow: 0 2px 8px rgba(30,60,114,0.12); }
+.quote-module .product-checkbox .check-icon { display: none; position: absolute; top: 4px; right: 4px; width: 18px; height: 18px; background: #1e3c72; color: white; border-radius: 50%; font-size: 11px; line-height: 18px; text-align: center; }
+.quote-module .product-checkbox.selected .check-icon { display: block; }
+.quote-module .product-checkbox .finance-tag { position: absolute; top: -8px; left: 50%; transform: translateX(-50%); background: #8b5cf6; color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 10px; white-space: nowrap; }
+.quote-module .product-checkbox.disabled { opacity: 0.35; cursor: not-allowed; border-color: #e2e8f0; background: #f1f5f9; color: #94a3b8; }
+.quote-module .product-checkbox.disabled:hover { border-color: #e2e8f0; }
+.quote-module .product-checkbox.disabled .check-icon { display: none !important; }
+.quote-module .product-checkbox.disabled input[type="checkbox"] { display: none; }
+
+/* 紧凑radio */
+.quote-module .simple-radio-group { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.quote-module .simple-radio-group > span { font-size: 0.85rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+.quote-module .simple-radio-group label { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; cursor: pointer; user-select: none; }
+.quote-module .simple-radio-group input[type="radio"] { width: 16px; height: 16px; cursor: pointer; margin: 0; }
+
+/* 必选模块 */
+.quote-module .required-box-compact { padding: 8px 10px; background: #fffbeb; border: 2px solid #f59e0b; border-radius: 8px; margin-top: 8px; }
+.quote-module .required-box-compact .required-title { font-weight: 700; color: #92400e; margin-bottom: 4px; font-size: 0.75rem; }
+.quote-module .required-box-compact .required-list { display: flex; flex-wrap: wrap; gap: 4px; }
+.quote-module .required-box-compact .required-tag { background: white; color: #92400e; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; border: 1px solid #f59e0b; }
+
+/* data-table */
+.quote-module .data-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.9rem; }
+.quote-module .data-table th { background: #f1f5f9; padding: 12px 16px; text-align: left; font-weight: 600; color: #64748b; border-bottom: 2px solid #e2e8f0; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
+.quote-module .data-table td { padding: 14px 16px; border-bottom: 1px solid #e2e8f0; }
+.quote-module .data-table tr:hover { background: #f8fafc; }
+
+/* summary-grid */
+.quote-module .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; }
+.quote-module .summary-card { background: white; padding: 20px; border-radius: 12px; border-left: 4px solid #1e3c72; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+.quote-module .summary-card.warning { border-left-color: #f59e0b; }
+.quote-module .summary-label { font-size: 0.85rem; color: #64748b; margin-bottom: 8px; }
+.quote-module .summary-value { font-size: 1.8rem; font-weight: 700; color: #1e293b; }
+
+/* collapse */
+.quote-module .collapsed { display: none !important; }
+.quote-module .collapse-btn { padding: 4px 10px; font-size: 0.75rem; background: white; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; color: #64748b; }
+.quote-module .collapse-btn:hover { background: #f1f5f9; color: #1e293b; }
+
+/* status-badge */
+.quote-module .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+
+/* 产品数量输入框 */
+.product-qty-input {
+    width: 48px; padding: 3px 4px; border: 1px solid #cbd5e1; border-radius: 6px;
+    text-align: center; font-size: 0.78rem; font-weight: 600; color: #1e293b;
+    background: white; transition: all 0.2s;
+}
+.product-qty-input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.15); }
+.product-qty-input:disabled { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
+
+/* 按钮 */
+.quote-module .btn { padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; border: none; display: inline-flex; align-items: center; gap: 6px; }
+.quote-module .btn-primary { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; box-shadow: 0 4px 12px rgba(30,60,114,0.3); }
+.quote-module .btn-secondary { background: white; color: #1e293b; border: 1px solid #e2e8f0; }
+</style>
+
+<div class="quote-module">
+    <div style="display: grid; grid-template-columns: 380px 1fr; gap: 24px;">
+        <!-- 左列：报价参数 -->
+        <div class="card" style="position: sticky; top: 24px; height: fit-content;">
+            <div class="card-header"><div class="card-title">&#x2699;&#xFE0F; 报价参数</div></div>
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="form-group">
+                    <label class="form-label">银企联订阅模式</label>
+                    <div class="radio-group">
+                        <label class="radio-card active" id="radioPublic" onclick="quoteModule.setDeployMode('public')"><input type="radio" name="deployMode" value="public" checked><div>&#x2601;&#xFE0F; 公有云订阅</div></label>
+                        <label class="radio-card" id="radioLocal" onclick="quoteModule.setDeployMode('local')"><input type="radio" name="deployMode" value="local"><div>&#x1F3E2; 本地部署订阅</div></label>
+                    </div>
+                    <div id="restrictedNotice" style="display: none; margin-top: 12px; padding: 12px; background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 8px; font-size: 0.85rem; color: #92400e;">
+                        <strong>&#x26A0;&#xFE0F; 限制性销售：</strong>需审批后方可销售
+                    </div>
+                </div>
+                <div class="form-group" id="financeVersionGroup">
+                    <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #fafafa; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; width: fit-content;" id="financeRow" onclick="quoteModule.toggleFinanceVersion()">
+                        <input type="checkbox" id="financeCheck" style="width: 16px; height: 16px; cursor: pointer; margin: 0;" onchange="event.preventDefault(); quoteModule.toggleFinanceVersion();">
+                        <span style="font-weight: 600; font-size: 0.85rem;">启用财资财司版</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">业务系统</label>
+                    <select id="businessSystem" class="form-select" onchange="quoteModule.handleSystemChange()">
+                        <option value="YonBIP旗舰版" selected>YonBIP旗舰版</option>
+                        <option value="YonBIP超级版">YonBIP超级版</option>
+                        <option value="YonBIP高级版">YonBIP高级版</option>
+                        <option value="NC">NC</option>
+                        <option value="NCC">NCC</option>
+                        <option value="YonSuite">YonSuite</option>
+                        <option value="U8">U8</option>
+                        <option value="U9">U9</option>
+                        <option value="U9 Cloud">U9 Cloud</option>
+                        <option value="U8 Cloud">U8 Cloud</option>
+                    </select>
+                </div>
+                <div class="form-group" id="cloudModeGroup">
+                    <div class="simple-radio-group">
+                        <span>部署方式</span>
+                        <div style="display: flex; gap: 16px;">
+                            <label id="cloudPublicLabel">
+                                <input type="radio" name="cloudMode" value="public" id="cloudPublic" checked oninput="validateBankCount(this)">
+                                <span>公有云部署</span>
+                            </label>
+                            <label id="cloudPrivateLabel">
+                                <input type="radio" name="cloudMode" value="private" id="cloudPrivate" oninput="validateBankCount(this)">
+                                <span>本地部署</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="required-box-compact" id="requiredModulesBox">
+                    <div class="required-title">&#x1F4CB; 必选模块</div>
+                    <div class="required-list" id="requiredModulesList"></div>
+                </div>
+                <div class="form-group" id="operatorGroup">
+                    <label class="form-label">操作员个数</label>
+                    <input type="number" id="operatorCount" class="form-input" value="1" min="1" max="100" oninput="validateBankCount(this)">
+                </div>
+                <div class="form-group" id="ukeyGroup">
+                    <label class="form-label">银行UKey</label>
+                    <div class="radio-group">
+                        <label class="radio-card active" id="ukeyHosted" onclick="quoteModule.setUKeyMode('hosted')"><input type="radio" name="ukeyMode" value="hosted" id="hosted" checked><div>&#x2601;&#xFE0F; 托管</div></label>
+                        <label class="radio-card" id="ukeySelf" onclick="quoteModule.setUKeyMode('self')"><input type="radio" name="ukeyMode" value="self" id="self"><div>&#x1F3E2; 自持</div></label>
+                    </div>
+                </div>
+                <div class="product-section">
+                    <div class="simple-radio-group" style="flex-direction: column; align-items: flex-start; gap: 6px; margin-bottom: 10px;">
+                        <span>报价维度</span>
+                        <div style="display: flex; gap: 20px; align-items: center;">
+                            <label style="display: flex; align-items: center; gap: 5px; font-size: 0.85rem;">
+                                <input type="radio" name="quoteMode" value="bank" id="quoteModeBank" checked onchange="quoteModule.setQuoteMode('bank')">
+                                <span id="countLabel">银行个数</span>
+                                <input type="number" id="bankCount" class="form-input" value="1" min="1" max="100" onchange="quoteModule.updateQuote()" onclick="event.stopPropagation()" style="width: 90px; padding: 3px 10px; font-size: 0.8rem; margin-left: 2px;">
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; font-size: 0.85rem;">
+                                <input type="radio" name="quoteMode" value="product" id="quoteModeProduct" onchange="quoteModule.setQuoteMode('product')">
+                                <span>产品个数</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="product-grid" id="productsGrid">
+                        <div class="product-checkbox selected" onclick="quoteModule.toggleProduct('kuaijiesuan')" id="box_kuaijiesuan"><input type="checkbox" id="kuaijiesuan" checked style="display: none;"><span class="check-icon">&#x2713;</span><div style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;"><span style="font-weight: 600;">快结算</span><input type="number" class="product-qty-input" id="qty_kuaijiesuan" value="1" min="1" max="999" oninput="validateQtyInput(this)" onclick="event.stopPropagation()" style="display:none;"></div></div>
+                        <div class="product-checkbox selected" onclick="quoteModule.toggleProduct('yinzhangtong')" id="box_yinzhangtong"><input type="checkbox" id="yinzhangtong" checked style="display: none;"><span class="check-icon">&#x2713;</span><div style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;"><span style="font-weight: 600;">银账通</span><input type="number" class="product-qty-input" id="qty_yinzhangtong" value="1" min="1" max="999" oninput="validateQtyInput(this)" onclick="event.stopPropagation()" style="display:none;"></div></div>
+                        <div class="product-checkbox" onclick="quoteModule.toggleProduct('dianpiaotong')" id="box_dianpiaotong"><input type="checkbox" id="dianpiaotong" style="display: none;"><span class="check-icon">&#x2713;</span><div style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;"><span style="font-weight: 600;">电票通</span><input type="number" class="product-qty-input" id="qty_dianpiaotong" value="1" min="1" max="999" oninput="validateQtyInput(this)" onclick="event.stopPropagation()" style="display:none;"></div></div>
+                        <div class="product-checkbox" onclick="quoteModule.toggleProduct('shoukuan')" id="box_shoukuan"><input type="checkbox" id="shoukuan" style="display: none;"><span class="check-icon">&#x2713;</span><div style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;"><span style="font-weight: 600;">收款通</span><input type="number" class="product-qty-input" id="qty_shoukuan" value="1" min="1" max="999" oninput="validateQtyInput(this)" onclick="event.stopPropagation()" style="display:none;"></div></div>
+                        <div class="product-checkbox disabled" onclick="quoteModule.toggleProduct('rongzi')" id="box_rongzi"><input type="checkbox" id="rongzi" style="display: none;"><span class="check-icon">&#x2713;</span><div style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;"><span style="font-weight: 600;">融资通</span><input type="number" class="product-qty-input" id="qty_rongzi" value="1" min="1" max="999" oninput="validateQtyInput(this)" onclick="event.stopPropagation()" style="display:none;"></div></div>
+                        <div class="product-checkbox disabled" onclick="quoteModule.toggleProduct('touzi')" id="box_touzi"><input type="checkbox" id="touzi" style="display: none;"><span class="check-icon">&#x2713;</span><div style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;"><span style="font-weight: 600;">投资通</span><input type="number" class="product-qty-input" id="qty_touzi" value="1" min="1" max="999" oninput="validateQtyInput(this)" onclick="event.stopPropagation()" style="display:none;"></div></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">订阅年限</label>
+                    <select id="yearCount" class="form-select" oninput="validateBankCount(this)">
+                        <option value="1" selected>1年</option><option value="2">2年</option><option value="3">3年</option><option value="5">5年</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">折扣率 (%)</label>
+                    <input type="number" id="discountRate" class="form-input" value="100" min="1" max="100" oninput="validateDiscount(this)">
+                    <div id="discountDisplay" style="margin-top: 6px; padding: 8px; background: #eff6ff; border-radius: 6px; color: #1e3c72; font-size: 0.85rem; font-weight: 600; text-align: center;">无折扣</div>
+                </div>
+                <!-- 独立页面操作按钮 -->
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 8px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
+                    <button class="btn btn-primary" onclick="exportQuote()" style="width: 100%; justify-content: center;">📄 导出Word</button>
+                    <button class="btn btn-primary" onclick="generateOpportunitySummary()" style="width: 100%; justify-content: center;">📋 生成商机摘要</button>
+                    <button class="btn btn-secondary" onclick="resetQuote()" style="width: 100%; justify-content: center;">🔄 重置</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右列：价格参考表 + 报价明细 -->
+        <div>
+            <!-- 价格参考表 -->
+            <div class="card" style="padding: 16px;">
+                <div class="card-header" style="margin-bottom: 12px; padding-bottom: 12px;">
+                    <div class="card-title" id="priceTableTitle" style="font-size: 1rem;">&#x1F4CA; 价格参考表（公有云订阅-标准版）</div>
+                    <button onclick="quoteModule.toggleCollapse('priceTableWrap')" class="collapse-btn" type="button">折叠/展开</button>
+                </div>
+                <div id="priceTableWrap" class="collapsed" style="overflow-x: auto;">
+                    <table class="data-table" id="refTable" style="font-size: 0.8rem;">
+                        <thead><tr><th style="padding: 8px 12px;">业务系统</th><th style="padding: 8px 12px;">快结算</th><th style="padding: 8px 12px;">银账通</th><th style="padding: 8px 12px;">电票通</th><th style="padding: 8px 12px;">收款通</th></tr></thead>
+                        <tbody id="refTableBody" style="font-size: 0.8rem;"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 报价明细 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">&#x1F4DD; 报价明细</div>
+                    <span id="selectedBadge" class="status-badge" style="background: #1e3c72; color: white;">已选 2 项</span>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="data-table" id="quoteTable">
+                        <thead><tr><th>序号</th><th>产品名称</th><th>单价</th><th>数量</th><th>小计</th><th>商务模式</th></tr></thead>
+                        <tbody id="quoteTableBody"></tbody>
+                    </table>
+                </div>
+                <div class="summary-grid">
+                    <div class="summary-card warning"><div class="summary-label">一次性采购（硬件）</div><div class="summary-value" id="oneTimeTotal">&yen;0</div></div>
+                    <div class="summary-card" id="subscriptionCard"><div class="summary-label">订阅费用</div><div class="summary-value" id="subscriptionTotal">&yen;0</div><div style="font-size: 0.85rem; color: #64748b; margin-top: 4px;" id="subscriptionDetail">1年 | 年费&yen;0</div></div>
+                </div>
+                <div style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 24px; border-radius: 12px; text-align: center; margin-top: 20px;">
+                    <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 8px;">合计费用</div>
+                    <div style="font-size: 2rem; font-weight: 700;" id="grandTotal">&yen;0</div>
+                </div>
+                <div style="margin-top: 20px; padding: 16px; background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 8px; font-size: 0.85rem; color: #92400e;" id="noticeContent">
+                    1. 本报价仅供参考，最终价格以商务合同为准<br>2. 标准版计量单位：银行数/年数<br>3. 投资通、融资通仅限BIP旗舰版、超级版
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    // ===== 配置数据 =====
+    const systemConfig = {
+        'YonBIP旗舰版': { priceCode: 'YB', cloudTypes: ['public','private'], defaultCloud: 'public', requiredModules: ['资金结算','全球账户'], eSignRule: 'conditional', needUKey: true, allowInvest: true },
+        'YonBIP超级版': { priceCode: 'YB', cloudTypes: ['public','private'], defaultCloud: 'public', requiredModules: ['资金结算','全球账户'], eSignRule: 'conditional', needUKey: true, allowInvest: true },
+        'YonBIP高级版': { priceCode: 'NC', cloudTypes: ['private'], defaultCloud: 'private', requiredModules: ['现金管理','银企直连','结算平台','CA'], eSignRule: 'always', needUKey: false, allowInvest: false },
+        'NC': { priceCode: 'NC', cloudTypes: ['private'], defaultCloud: 'private', requiredModules: ['现金管理','银企直连','CA'], eSignRule: 'always', needUKey: false, allowInvest: false },
+        'NCC': { priceCode: 'NC', cloudTypes: ['private'], defaultCloud: 'private', requiredModules: ['现金管理','银企直连','CA'], eSignRule: 'always', needUKey: false, allowInvest: false },
+        'YonSuite': { priceCode: 'YS', cloudTypes: ['public'], defaultCloud: 'public', requiredModules: ['现金管理'], eSignRule: 'conditional', needUKey: true, allowInvest: false },
+        'U8': { priceCode: 'U8', cloudTypes: ['public','private'], defaultCloud: 'private', requiredModules: ['网上银行'], eSignRule: 'always', needUKey: true, allowInvest: false, noDianpiao: true },
+        'U9': { priceCode: 'U8', cloudTypes: ['public','private'], defaultCloud: 'private', requiredModules: ['现金银行','云集成模块'], eSignRule: 'always', needUKey: true, allowInvest: false, noDianpiao: true },
+        'U9 Cloud': { priceCode: 'U8', cloudTypes: ['public','private'], defaultCloud: 'private', requiredModules: ['现金银行','云集成模块'], eSignRule: 'always', needUKey: true, allowInvest: false },
+        'U8 Cloud': { priceCode: 'U8', cloudTypes: ['private'], defaultCloud: 'private', requiredModules: ['现金管理','银企直连','CA'], eSignRule: 'always', needUKey: false, allowInvest: false, noDianpiao: true }
+    };
+
+    const publicPriceConfig = {
+        'YB': { name: 'YB（旗舰版、超级版）', kuaijiesuan: 9800, yinzhangtong: 6800, dianpiaotong: 30000, shoukuan: 9800, finance: { kuaijiesuan: 50000, yinzhangtong: 30000, dianpiaotong: 100000 } },
+        'YS': { name: 'YS（标准版、专业版）', kuaijiesuan: 6800, yinzhangtong: 4800, dianpiaotong: 30000, shoukuan: 6800, finance: { kuaijiesuan: 30000, yinzhangtong: 30000, dianpiaotong: 30000 } },
+        'NC': { name: 'NC/NCC/BIP高级-集团版', kuaijiesuan: 15000, yinzhangtong: 9800, dianpiaotong: 50000, shoukuan: 15000, finance: { kuaijiesuan: 100000, yinzhangtong: 100000, dianpiaotong: 100000 } },
+        'U8': { name: 'U8/U9/U8C/U9C-企业版', kuaijiesuan: 9800, yinzhangtong: 4800, dianpiaotong: 30000, shoukuan: 6800, finance: { kuaijiesuan: 20000, yinzhangtong: 10000, dianpiaotong: 30000 } }
+    };
+
+    const localPriceConfig = {
+        'YB': { name: 'YB（旗舰版、超级版）', kuaijiesuan: 20000, yinzhangtong: 15000, dianpiaotong: 50000, shoukuan: 15000, finance: { kuaijiesuan: 100000, yinzhangtong: 100000, dianpiaotong: 200000 } },
+        'NC': { name: 'NC/NCC/BIP高级-集团版', kuaijiesuan: 30000, yinzhangtong: 19800, dianpiaotong: 100000, shoukuan: 30000, finance: { kuaijiesuan: 100000, yinzhangtong: 100000, dianpiaotong: 200000 } },
+        'U8': { name: 'U8/U9/U8C/U9C-企业版', kuaijiesuan: 20000, yinzhangtong: 10000, dianpiaotong: 30000, shoukuan: 20000, finance: { kuaijiesuan: 20000, yinzhangtong: 10000, dianpiaotong: 30000 } }
+    };
+
+    const requiredModulesMap = {
+        'U8': { 'kuaijiesuan': ['网上银行'], 'yinzhangtong': ['网上银行'], 'dianpiaotong': ['不支持'] },
+        'U8 Cloud': { 'kuaijiesuan': ['现金管理','银企直连','CA'], 'yinzhangtong': ['现金管理','银企直连','CA'], 'dianpiaotong': ['不支持'] },
+        'U9': { 'kuaijiesuan': ['现金银行','云集成模块'], 'yinzhangtong': ['现金银行','云集成模块'], 'dianpiaotong': ['不支持'] },
+        'U9 Cloud': { 'kuaijiesuan': ['现金银行','云集成模块'], 'yinzhangtong': ['现金银行','云集成模块'], 'dianpiaotong': ['票据管理','云集成模块'] },
+        'YonSuite': { 'kuaijiesuan': ['现金管理'], 'yinzhangtong': ['现金管理'], 'dianpiaotong': ['现金管理','商业汇票'] },
+        'NC': { 'kuaijiesuan': ['现金管理','银企直连','CA'], 'yinzhangtong': ['现金管理','银企直连','CA'], 'dianpiaotong': ['电票特性（NCC1909-2207 需要等分票特性包）'] },
+        'NCC': { 'kuaijiesuan': ['现金管理','银企直连','CA'], 'yinzhangtong': ['现金管理','银企直连','CA'], 'dianpiaotong': ['电票特性（NCC1909-2207 需要等分票特性包）'] },
+        'YonBIP高级版': { 'kuaijiesuan': ['现金管理','银企直连','结算平台','CA'], 'yinzhangtong': ['现金管理','银企直连','回单管理（高级版2207及以上版本）','结算平台'], 'dianpiaotong': ['电票特性（2207 需要等分票特性包；2207以上不需要）'] },
+        'YonBIP超级版': { 'kuaijiesuan': ['资金结算'], 'yinzhangtong': ['资金结算'], 'dianpiaotong': ['资金结算','票证管理','票据池（可选）'] },
+        'YonBIP旗舰版': { 'kuaijiesuan': ['资金结算'], 'yinzhangtong': ['资金结算'], 'dianpiaotong': ['资金结算','票证管理','票据池（可选）'] }
+    };
+
+    // ===== 模块状态 =====
+    const UKEY_PRICE = 100;
+    const CERT_PRICE_PER_YEAR = 400;
+    const SERVER_PRICE = 39600;
+    const SERVER_CAPACITY = 15;
+    const ESIGN_DEVICE_PRICE = 10000;
+
+    let currentVersion = 'standard';
+    let currentDeployMode = 'public';
+    let currentQuoteMode = 'bank';
+    let currentConfig = systemConfig['YonBIP旗舰版'];
+
+    // ===== 函数定义 =====
+
+    function getRequiredModules() {
+        const system = document.getElementById('businessSystem').value;
+        const productMap = requiredModulesMap[system];
+        if (!productMap) return [];
+        const selectedProducts = [];
+        if (document.getElementById('kuaijiesuan').checked) selectedProducts.push('kuaijiesuan');
+        if (document.getElementById('yinzhangtong').checked) selectedProducts.push('yinzhangtong');
+        if (document.getElementById('dianpiaotong').checked) selectedProducts.push('dianpiaotong');
+        const allModules = new Set();
+        selectedProducts.forEach(function(product) {
+            const modules = productMap[product];
+            if (modules && modules.indexOf('不支持') === -1) {
+                modules.forEach(function(m) { allModules.add(m); });
+            }
+        });
+        return Array.from(allModules);
+    }
+
+    function updateRequiredModulesDisplay() {
+        const modules = getRequiredModules();
+        const box = document.getElementById('requiredModulesBox');
+        const list = document.getElementById('requiredModulesList');
+        if (!box || !list) return;
+        if (modules.length === 0) {
+            box.style.display = 'none';
+        } else {
+            box.style.display = 'block';
+            list.innerHTML = modules.map(function(m) { return '<span class="required-tag">' + m + '</span>'; }).join('');
+        }
+    }
+
+    function setDeployMode(mode) {
+        // 修复1+2：阻止不支持本地部署的系统切换
+        if (mode === 'local' && currentConfig && !currentConfig.cloudTypes.includes('private')) {
+            showToast('当前业务系统「' + document.getElementById('businessSystem').value + '」不支持本地部署');
+            document.getElementById('radioPublic').classList.add('active');
+            document.getElementById('radioLocal').classList.remove('active');
+            return;
+        }
+        currentDeployMode = mode;
+        document.getElementById('radioPublic').classList.toggle('active', mode === 'public');
+        document.getElementById('radioLocal').classList.toggle('active', mode === 'local');
+        document.getElementById('restrictedNotice').style.display = mode === 'local' ? 'block' : 'none';
+        if (mode === 'local') {
+            document.getElementById('cloudPrivate').checked = true;
+            document.getElementById('cloudPublic').disabled = true;
+            document.getElementById('cloudPublic').parentElement.style.opacity = '0.4';
+            document.getElementById('cloudPublic').parentElement.style.cursor = 'not-allowed';
+            document.getElementById('cloudPrivate').disabled = false;
+            document.getElementById('cloudPrivate').parentElement.style.opacity = '1';
+            document.getElementById('cloudPrivate').parentElement.style.cursor = 'pointer';
+            // 本地部署时银行UKey强制自持，禁用托管
+            document.getElementById('ukeyGroup').style.display = 'block';
+            document.getElementById('ukeySelf').classList.add('active');
+            document.getElementById('ukeyHosted').classList.remove('active');
+            document.getElementById('ukeyHosted').style.opacity = '0.4';
+            document.getElementById('ukeyHosted').style.cursor = 'not-allowed';
+            document.getElementById('hosted').disabled = true;
+            document.getElementById('self').checked = true;
+        } else {
+            document.getElementById('ukeyGroup').style.display = 'block';
+            document.getElementById('ukeyHosted').style.opacity = '1';
+            document.getElementById('ukeyHosted').style.cursor = 'pointer';
+            document.getElementById('hosted').disabled = false;
+            document.getElementById('cloudPublic').disabled = false;
+            document.getElementById('cloudPublic').parentElement.style.opacity = '1';
+            document.getElementById('cloudPublic').parentElement.style.cursor = 'pointer';
+            document.getElementById('cloudPrivate').disabled = false;
+            document.getElementById('cloudPrivate').parentElement.style.opacity = '1';
+            document.getElementById('cloudPrivate').parentElement.style.cursor = 'pointer';
+            handleSystemChange();
+        }
+        updateQuote();
+    }
+
+    function setQuoteMode(mode) {
+        currentQuoteMode = mode;
+        const bankCountInput = document.getElementById('bankCount');
+        const qtyInputs = document.querySelectorAll('.product-qty-input');
+        if (mode === 'product') {
+            if (bankCountInput) bankCountInput.style.display = 'none';
+            qtyInputs.forEach(function(el) {
+                el.style.display = 'block';
+                const productId = el.id.replace('qty_', '');
+                const box = document.getElementById('box_' + productId);
+                // 已勾选的产品默认数量为1，未勾选的为0
+                if (box && box.classList.contains('selected')) {
+                    el.value = '1';
+                } else {
+                    el.value = '0';
+                }
+            });
+        } else {
+            if (bankCountInput) bankCountInput.style.display = 'inline-block';
+            qtyInputs.forEach(function(el) { el.style.display = 'none'; });
+        }
+        updateRequiredModulesDisplay();
+        updateQuote();
+    }
+
+    function validateQtyInput(el) {
+        let val = parseInt(el.value);
+        if (isNaN(val) || val < 1) {
+            el.value = 1;
+        } else {
+            el.value = val;
+        }
+        updateQuote();
+    }
+
+    function validateBankCount(el) {
+        let val = parseInt(el.value);
+        let max = parseInt(el.getAttribute('max')) || 9999;
+        if (isNaN(val) || val < 1) {
+            el.value = 1;
+        } else if (val > max) {
+            el.value = max;
+        } else {
+            el.value = val;
+        }
+        updateQuote();
+    }
+
+    function validateDiscount(el) {
+        let val = parseInt(el.value);
+        if (isNaN(val) || val < 1) {
+            el.value = 1;
+        } else if (val > 100) {
+            el.value = 100;
+        } else {
+            el.value = val;
+        }
+        updateQuote();
+    }
+
+    function toggleFinanceVersion() {
+        const checkbox = document.getElementById('financeCheck');
+        checkbox.checked = !checkbox.checked;
+        document.getElementById('financeRow').style.background = checkbox.checked ? '#f5f3ff' : '#fafafa';
+        document.getElementById('financeRow').style.borderColor = checkbox.checked ? '#8b5cf6' : '#e2e8f0';
+        if (checkbox.checked) {
+            currentVersion = 'finance';
+            document.getElementById('countLabel').textContent = '财资或司库系统个数';
+            document.getElementById('bankCount').value = 1;
+            showFinanceProducts();
+        } else {
+            currentVersion = 'standard';
+            document.getElementById('countLabel').textContent = '直联银行个数';
+            document.getElementById('bankCount').value = 4;
+            showStandardProducts();
+            updateProductAvailability();
+        }
+        updateLabels();
+        updateQuote();
+    }
+
+    function showFinanceProducts() {
+        const system = document.getElementById('businessSystem').value;
+        ['shoukuan','rongzi','touzi'].forEach(function(id) {
+            const box = document.getElementById('box_' + id);
+            box.classList.add('disabled');
+            document.getElementById(id).checked = false;
+            box.classList.remove('selected');
+        });
+        if (system === 'YonSuite') {
+            // YonSuite 财资版：只有一个"集中结算及银账管理"
+            ['yinzhangtong','dianpiaotong'].forEach(function(id) {
+                const box = document.getElementById('box_' + id);
+                box.style.display = 'none';
+                document.getElementById(id).checked = false;
+                box.classList.remove('selected');
+            });
+            const kuaiBox = document.getElementById('box_kuaijiesuan');
+            kuaiBox.classList.remove('disabled');
+            kuaiBox.classList.add('finance-product');
+            kuaiBox.style.display = 'flex';
+            const textSpan = kuaiBox.querySelector('span[style*="font-weight"]');
+            if (textSpan) textSpan.textContent = '集中结算及银账管理';
+            if (!kuaiBox.querySelector('.finance-tag')) {
+                const tag = document.createElement('div');
+                tag.className = 'finance-tag';
+                tag.style.cssText = 'position: absolute; top: -8px; left: 50%; transform: translateX(-50%); background: #8b5cf6; color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 10px;';
+                tag.textContent = '财资';
+                kuaiBox.appendChild(tag);
+            }
+            document.getElementById('kuaijiesuan').checked = true;
+            kuaiBox.classList.add('selected');
+        } else {
+            // 其他系统：恢复三个财资产品，快结算文本必须恢复
+            ['kuaijiesuan','yinzhangtong','dianpiaotong'].forEach(function(id) {
+                const box = document.getElementById('box_' + id);
+                box.style.display = 'flex';
+                box.classList.remove('disabled');
+                box.classList.add('finance-product');
+                if (!box.querySelector('.finance-tag')) {
+                    const tag = document.createElement('div');
+                    tag.className = 'finance-tag';
+                    tag.style.cssText = 'position: absolute; top: -8px; left: 50%; transform: translateX(-50%); background: #8b5cf6; color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 10px;';
+                    tag.textContent = '财资';
+                    box.appendChild(tag);
+                }
+                document.getElementById(id).checked = id !== 'dianpiaotong';
+                box.classList.toggle('selected', id !== 'dianpiaotong');
+            });
+            const kuaiText = document.getElementById('box_kuaijiesuan').querySelector('span[style*="font-weight"]');
+            if (kuaiText) kuaiText.textContent = '快结算';
+        }
+    }
+
+    function showStandardProducts() {
+        document.querySelectorAll('.finance-tag').forEach(function(el) { el.remove(); });
+        ['kuaijiesuan','yinzhangtong','dianpiaotong'].forEach(function(id) {
+            const box = document.getElementById('box_' + id);
+            box.classList.remove('finance-product');
+            box.style.display = 'flex';
+        });
+        const kuaiBox = document.getElementById('box_kuaijiesuan');
+        const textSpan = kuaiBox.querySelector('span[style*="font-weight"]');
+        if (textSpan) textSpan.textContent = '快结算';
+        document.getElementById('kuaijiesuan').checked = true;
+        document.getElementById('box_kuaijiesuan').classList.add('selected');
+        document.getElementById('yinzhangtong').checked = true;
+        document.getElementById('box_yinzhangtong').classList.add('selected');
+    }
+
+    function updateLabels() {
+        const isFinance = currentVersion === 'finance';
+        const isLocal = currentDeployMode === 'local';
+        document.getElementById('priceTableTitle').textContent = '价格参考表（' + (isLocal ? '本地部署' : '公有云') + '订阅-' + (isFinance ? '财资财司版' : '标准版') + '）';
+        document.getElementById('subscriptionCard').style.borderLeftColor = isFinance ? '#8b5cf6' : '#1e3c72';
+    }
+
+    function updateProductAvailability() {
+        const system = document.getElementById('businessSystem').value;
+        const availability = {
+            'kuaijiesuan': true,
+            'yinzhangtong': true,
+            'dianpiaotong': !currentConfig.noDianpiao,
+            'shoukuan': true,
+            'rongzi': ['YonBIP旗舰版','YonBIP超级版'].includes(system),
+            'touzi': ['YonBIP旗舰版','YonBIP超级版'].includes(system)
+        };
+        for (const id in availability) {
+            if (!availability.hasOwnProperty(id)) continue;
+            const enabled = availability[id];
+            const box = document.getElementById('box_' + id);
+            if (!box) continue;
+            if (enabled) {
+                box.classList.remove('disabled');
+            } else {
+                box.classList.add('disabled');
+                document.getElementById(id).checked = false;
+                box.classList.remove('selected');
+            }
+        }
+    }
+
+    function handleSystemChange() {
+        const system = document.getElementById('businessSystem').value;
+        currentConfig = systemConfig[system];
+        updateRequiredModulesDisplay();
+        if (currentDeployMode !== 'local') {
+            if (currentConfig.cloudTypes.length === 1) {
+                const onlyMode = currentConfig.cloudTypes[0];
+                const disableId = onlyMode === 'public' ? 'cloudPrivate' : 'cloudPublic';
+                const enableId = onlyMode === 'public' ? 'cloudPublic' : 'cloudPrivate';
+                document.getElementById(disableId).disabled = true;
+                document.getElementById(disableId).parentElement.style.opacity = '0.4';
+                document.getElementById(disableId).parentElement.style.cursor = 'not-allowed';
+                document.getElementById(enableId).disabled = false;
+                document.getElementById(enableId).parentElement.style.opacity = '1';
+                document.getElementById(enableId).parentElement.style.cursor = 'pointer';
+                document.getElementById(enableId).checked = true;
+            } else {
+                document.getElementById('cloudPublic').disabled = false;
+                document.getElementById('cloudPrivate').disabled = false;
+                document.getElementById('cloudPublic').parentElement.style.opacity = '1';
+                document.getElementById('cloudPublic').parentElement.style.cursor = 'pointer';
+                document.getElementById('cloudPrivate').parentElement.style.opacity = '1';
+                document.getElementById('cloudPrivate').parentElement.style.cursor = 'pointer';
+                const defCloud = currentConfig.defaultCloud === 'public' ? 'cloudPublic' : 'cloudPrivate';
+                document.getElementById(defCloud).checked = true;
+            }
+        }
+        if (currentVersion === 'standard') { showStandardProducts(); updateProductAvailability(); }
+        else { showFinanceProducts(); }
+        updateQuote();
+    }
+
+    function setUKeyMode(mode) {
+        document.getElementById('ukeyHosted').classList.toggle('active', mode === 'hosted');
+        document.getElementById('ukeySelf').classList.toggle('active', mode === 'self');
+        updateQuote();
+    }
+
+    function toggleProduct(productId) {
+        if (currentVersion === 'finance' && !['kuaijiesuan','yinzhangtong','dianpiaotong'].includes(productId)) return;
+        const box = document.getElementById('box_' + productId);
+        if (box && box.classList.contains('disabled')) return;
+        const checkbox = document.getElementById(productId);
+        const wrapper = document.getElementById('box_' + productId);
+        checkbox.checked = !checkbox.checked;
+        wrapper.classList.toggle('selected', checkbox.checked);
+        // 产品维度下：勾选时 qty 默认1，取消勾选时 qty 设为0
+        if (currentQuoteMode === 'product') {
+            const qtyInput = document.getElementById('qty_' + productId);
+            if (qtyInput) {
+                qtyInput.value = checkbox.checked ? '1' : '0';
+            }
+        }
+        updateRequiredModulesDisplay();
+        updateQuote();
+    }
+
+    function calculateTieredPrice(tierPrices, totalCount) {
+        let total = 0, remaining = totalCount;
+        const tier1Count = Math.min(remaining, 5); total += tier1Count * tierPrices[0]; remaining -= tier1Count;
+        if (remaining > 0) { const tier2Count = Math.min(remaining, 10); total += tier2Count * tierPrices[1]; remaining -= tier2Count; }
+        if (remaining > 0) total += remaining * tierPrices[2];
+        return total;
+    }
+
+    function getTierDistribution(totalCount) {
+        let tier1 = Math.min(totalCount, 5), remaining = totalCount - tier1;
+        let tier2 = Math.min(remaining, 10), tier3 = Math.max(0, remaining - tier2);
+        let parts = [];
+        if (tier1 > 0) parts.push(tier1 + '家x第一档');
+        if (tier2 > 0) parts.push(tier2 + '家x第二档');
+        if (tier3 > 0) parts.push(tier3 + '家x第三档');
+        return parts.join(' + ');
+    }
+
+    function updateQuote() {
+        const code = currentConfig.priceCode;
+        const isFinance = currentVersion === 'finance';
+        const isLocal = currentDeployMode === 'local';
+        const priceConfig = isLocal ? localPriceConfig : publicPriceConfig;
+        const config = priceConfig[code];
+        const count = parseInt(document.getElementById('bankCount').value) || 0;
+        const operatorCount = parseInt(document.getElementById('operatorCount').value) || 0;
+        const yearCount = parseInt(document.getElementById('yearCount').value) || 1;
+        const discountRate = parseInt(document.getElementById('discountRate').value) || 100;
+        document.getElementById('discountDisplay').textContent = discountRate === 100 ? '无折扣' : discountRate + '% (' + (discountRate/10).toFixed(1) + '折)';
+
+        // 更新价格参考表
+        let refHtml = '';
+        for (const key in priceConfig) {
+            if (!priceConfig.hasOwnProperty(key)) continue;
+            const cfg = priceConfig[key];
+            const isCurrent = key === code;
+            let kuaiHtml, yinHtml, dianHtml;
+            if (isFinance) {
+                if (key === 'YS') {
+                    kuaiHtml = '集中结算及银账管理<br>¥' + cfg.finance.kuaijiesuan.toLocaleString() + '/系统/年';
+                    yinHtml = '-';
+                    dianHtml = '-';
+                } else {
+                    kuaiHtml = '¥' + cfg.finance.kuaijiesuan.toLocaleString() + '/系统/年';
+                    yinHtml = '¥' + cfg.finance.yinzhangtong.toLocaleString() + '/系统/年';
+                    dianHtml = '¥' + cfg.finance.dianpiaotong.toLocaleString() + '/系统/年';
+                }
+            } else {
+                if (key === 'YB' && Array.isArray(cfg.kuaijiesuan)) {
+                    kuaiHtml = '1-5家：' + cfg.kuaijiesuan[0] + '<br>6-15家：' + cfg.kuaijiesuan[1] + '<br>16家+：' + cfg.kuaijiesuan[2];
+                    yinHtml = '1-5家：' + cfg.yinzhangtong[0] + '<br>6-15家：' + cfg.yinzhangtong[1] + '<br>16家+：' + cfg.yinzhangtong[2];
+                    dianHtml = '1-5家：' + cfg.dianpiaotong[0] + '<br>6-15家：' + cfg.dianpiaotong[1] + '<br>16家+：' + cfg.dianpiaotong[2];
+                } else {
+                    kuaiHtml = cfg.kuaijiesuan;
+                    yinHtml = cfg.yinzhangtong;
+                    dianHtml = cfg.dianpiaotong;
+                }
+            }
+            refHtml += '<tr style="' + (isCurrent ? 'background:#eff6ff;font-weight:600;' : '') + '"><td style="font-weight:700;text-align:left;padding-left:12px;">' + cfg.name + '</td><td>' + kuaiHtml + '</td><td>' + yinHtml + '</td><td>' + dianHtml + '</td><td>' + (isFinance ? '-' : cfg.shoukuan) + '</td></tr>';
+        }
+        document.getElementById('refTableBody').innerHTML = refHtml;
+
+        // 计算报价明细
+        let oneTimeTotal = 0, subscriptionTotal = 0, tableHTML = '', rowIndex = 0, selectedProducts = 0;
+        let productSubscription = 0; // 提到块外，供年基础费用计算使用
+        const isYB = code === 'YB';
+        const ukeyModeEl = document.querySelector('input[name="ukeyMode"]:checked');
+        const ukeyMode = ukeyModeEl ? ukeyModeEl.value : 'hosted';
+
+        if (isFinance) {
+            const system = document.getElementById('businessSystem').value;
+            if (system === 'YonSuite') {
+                // YonSuite 财资版：只有一个"集中结算及银账管理"
+                const checkbox = document.getElementById('kuaijiesuan');
+                if (checkbox && checkbox.checked) {
+                    selectedProducts++; rowIndex++;
+                    const unitPrice = config.finance.kuaijiesuan;
+                    const qty = currentQuoteMode === 'product' ? (parseInt(document.getElementById('qty_kuaijiesuan').value) || 0) : count;
+                    if (currentQuoteMode === 'product' && qty <= 0) return;
+                    const subtotal = unitPrice * qty;
+                    productSubscription += subtotal;
+                    const qtyLabel = currentQuoteMode === 'product' ? qty + '套' : qty + '系统';
+                    tableHTML += '<tr><td>' + rowIndex + '</td><td>集中结算及银账管理</td><td>¥' + unitPrice.toLocaleString() + '</td><td>' + qtyLabel + 'x' + yearCount + '年</td><td style="color:#8b5cf6;font-weight:700;">¥' + (subtotal*yearCount).toLocaleString() + '</td><td>' + (isLocal?'本地部署':'公有云') + '</td></tr>';
+                }
+            } else {
+                const financeProducts = [
+                    {id:'kuaijiesuan',key:'kuaijiesuan',name:'快结算-财资财司版'},
+                    {id:'yinzhangtong',key:'yinzhangtong',name:'银账通-财资财司版'},
+                    {id:'dianpiaotong',key:'dianpiaotong',name:'电票通-财资财司版'}
+                ];
+                financeProducts.forEach(function(product) {
+                    const checkbox = document.getElementById(product.id);
+                    if (checkbox && checkbox.checked) {
+                        selectedProducts++; rowIndex++;
+                        const unitPrice = config.finance[product.key];
+                        const qty = currentQuoteMode === 'product' ? (parseInt(document.getElementById('qty_' + product.id).value) || 0) : count;
+                        if (currentQuoteMode === 'product' && qty <= 0) return;
+                        const subtotal = unitPrice * qty;
+                        productSubscription += subtotal;
+                        const qtyLabel = currentQuoteMode === 'product' ? qty + '套' : qty + '系统';
+                        tableHTML += '<tr><td>' + rowIndex + '</td><td>' + product.name + '</td><td>¥' + unitPrice.toLocaleString() + '</td><td>' + qtyLabel + 'x' + yearCount + '年</td><td style="color:' + (isFinance?'#8b5cf6':'#1e3c72') + ';font-weight:700;">¥' + (subtotal*yearCount).toLocaleString() + '</td><td>' + (isLocal?'本地部署':'公有云') + '</td></tr>';
+                    }
+                });
+            }
+            subscriptionTotal += Math.round(productSubscription * yearCount * (discountRate/100));
+        } else {
+            const products = [
+                {id:'kuaijiesuan',key:'kuaijiesuan',name:'快结算'},
+                {id:'yinzhangtong',key:'yinzhangtong',name:'银账通'},
+                {id:'dianpiaotong',key:'dianpiaotong',name:'电票通'},
+                {id:'shoukuan',key:'shoukuan',name:'收款通'}
+            ];
+            products.forEach(function(product) {
+                if (product.id === 'dianpiaotong' && currentConfig.noDianpiao) return;
+                const checkbox = document.getElementById(product.id);
+                if (checkbox && checkbox.checked) {
+                    selectedProducts++; rowIndex++;
+                    const qty = currentQuoteMode === 'product' ? (parseInt(document.getElementById('qty_' + product.id).value) || 0) : count;
+                    if (currentQuoteMode === 'product' && qty <= 0) return;
+                    let subtotal, unitPriceDisplay, tierInfo = '';
+                    if (isYB && ['kuaijiesuan','yinzhangtong','dianpiaotong'].includes(product.key) && Array.isArray(config[product.key])) {
+                        const tierPrices = config[product.key];
+                        subtotal = calculateTieredPrice(tierPrices, qty);
+                        unitPriceDisplay = tierPrices[0] + '/' + tierPrices[1] + '/' + tierPrices[2];
+                        tierInfo = '<div style="font-size:0.75rem;color:#666;margin-top:4px;">' + getTierDistribution(qty) + '</div>';
+                    } else {
+                        const unitPrice = config[product.key];
+                        subtotal = unitPrice * qty;
+                        unitPriceDisplay = unitPrice.toLocaleString();
+                    }
+                    productSubscription += subtotal;
+                    const qtyLabel = currentQuoteMode === 'product' ? qty + '套' : qty + '家';
+                    tableHTML += '<tr><td>' + rowIndex + '</td><td>' + product.name + tierInfo + '</td><td>¥' + unitPriceDisplay + '</td><td>' + qtyLabel + 'x' + yearCount + '年</td><td style="color:#1e3c72;font-weight:700;">¥' + (subtotal*yearCount).toLocaleString() + '</td><td>' + (isLocal?'本地部署':'公有云') + '</td></tr>';
+                }
+            });
+            if (currentConfig.allowInvest) {
+                const investPrices = {
+                    'rongzi': { name: '融资通', price: 8000 },
+                    'touzi': { name: '投资通', price: 9800 }
+                };
+                ['rongzi','touzi'].forEach(function(id) {
+                    const checkbox = document.getElementById(id);
+                    if (checkbox && checkbox.checked) {
+                        selectedProducts++; rowIndex++;
+                        const info = investPrices[id];
+                        const qty = currentQuoteMode === 'product' ? (parseInt(document.getElementById('qty_' + id).value) || 0) : count;
+                        if (currentQuoteMode === 'product' && qty <= 0) return;
+                        const subtotal = info.price * qty;
+                        productSubscription += subtotal;
+                        const qtyLabel = currentQuoteMode === 'product' ? qty + '套' : qty + '家';
+                        tableHTML += '<tr><td>' + rowIndex + '</td><td>' + info.name + '</td><td>¥' + info.price.toLocaleString() + '</td><td>' + qtyLabel + 'x' + yearCount + '年</td><td style="color:#1e3c72;font-weight:700;">¥' + (subtotal*yearCount).toLocaleString() + '</td><td>' + (isLocal?'本地部署':'公有云') + '</td></tr>';
+                    }
+                });
+            }
+            subscriptionTotal += Math.round(productSubscription * yearCount * (discountRate/100));
+        }
+
+        // E路签逻辑（基于表格规则）
+        const cloudPublicEl = document.getElementById('cloudPublic');
+        const cloudPrivateEl = document.getElementById('cloudPrivate');
+        const ukeyModeElNow = document.querySelector('input[name="ukeyMode"]:checked');
+        const ukeyModeNow = ukeyModeElNow ? ukeyModeElNow.value : 'hosted';
+        const systemNow = document.getElementById('businessSystem').value;
+        const bizCloudMode = cloudPrivateEl && cloudPrivateEl.checked ? 'private' : 'public';
+        let showESign;
+        if (currentDeployMode === 'local') {
+            // 银企联本地部署 + 业务系统本地部署 → 不需要
+            showESign = false;
+        } else {
+            // 银企联公有云
+            if (bizCloudMode === 'public') {
+                // 业务系统公有云
+                if (ukeyModeNow === 'hosted') {
+                    showESign = false;  // 公有云+托管 → 不需要
+                } else {
+                    showESign = true;   // 公有云+自持 → 需要
+                }
+            } else {
+                // 业务系统本地部署
+                const noESignSystems = ['YonBIP旗舰版', 'YonBIP超级版', 'U8 Cloud'];
+                if (noESignSystems.includes(systemNow) && ukeyModeNow === 'hosted') {
+                    showESign = false;  // 旗舰版/超级版/U8C + 本地部署 + 托管 → 不需要
+                } else {
+                    showESign = true;   // 其他系统 + 本地部署 + 托管，或任何系统 + 本地部署 + 自持 → 需要
+                }
+            }
+        }
+        if (showESign) {
+            rowIndex++; oneTimeTotal += ESIGN_DEVICE_PRICE;
+            tableHTML += '<tr><td>' + rowIndex + '</td><td>E路签标准版</td><td>¥' + ESIGN_DEVICE_PRICE.toLocaleString() + '</td><td>1</td><td>¥' + ESIGN_DEVICE_PRICE.toLocaleString() + '</td><td>一次性</td></tr>';
+            rowIndex++;
+            const esignCertTotal = CERT_PRICE_PER_YEAR * yearCount;
+            tableHTML += '<tr><td>' + rowIndex + '</td><td>企业证书-E路签</td><td>¥' + CERT_PRICE_PER_YEAR + '/年</td><td>' + yearCount + '年</td><td style="color:' + (isFinance?'#8b5cf6':'#1e3c72') + ';font-weight:700;">¥' + esignCertTotal.toLocaleString() + '</td><td>订阅</td></tr>';
+            subscriptionTotal += Math.round(esignCertTotal * (discountRate/100));
+        }
+
+        // UKey
+        if (currentConfig.needUKey) {
+            rowIndex++;
+            const ukeySubtotal = UKEY_PRICE * operatorCount;
+            oneTimeTotal += ukeySubtotal;
+            tableHTML += '<tr><td>' + rowIndex + '</td><td>操作员U盾</td><td>¥' + UKEY_PRICE + '</td><td>' + operatorCount + '</td><td>¥' + ukeySubtotal.toLocaleString() + '</td><td>一次性</td></tr>';
+            rowIndex++;
+            const personalCertTotal = (CERT_PRICE_PER_YEAR * operatorCount) * yearCount;
+            tableHTML += '<tr><td>' + rowIndex + '</td><td>个人证书-操作员U盾支付验签</td><td>¥' + CERT_PRICE_PER_YEAR + '/年/人</td><td>' + operatorCount + '人x' + yearCount + '年</td><td style="color:' + (isFinance?'#8b5cf6':'#1e3c72') + ';font-weight:700;">¥' + personalCertTotal.toLocaleString() + '</td><td>订阅</td></tr>';
+            subscriptionTotal += Math.round(personalCertTotal * (discountRate/100));
+        }
+
+        // 保存1年无折扣原始订阅费用（修复3：供推荐方案使用）
+        window._annualBaseSubscription = productSubscription + (showESign ? CERT_PRICE_PER_YEAR : 0) + (currentConfig.needUKey ? CERT_PRICE_PER_YEAR * operatorCount : 0);
+
+        // 银行定制服务器（银行维度且UKey自持时计算）
+        if (currentQuoteMode === 'bank' && ukeyMode === 'self') {
+            rowIndex++;
+            const serverCount = Math.ceil(count / SERVER_CAPACITY);
+            const serverSubtotal = SERVER_PRICE * serverCount;
+            oneTimeTotal += serverSubtotal;
+            tableHTML += '<tr><td>' + rowIndex + '</td><td>银行定制服务器</td><td>¥' + SERVER_PRICE.toLocaleString() + '</td><td>' + serverCount + '台</td><td>¥' + serverSubtotal.toLocaleString() + '</td><td>一次性</td></tr>';
+        }
+
+        // 更新DOM
+        document.getElementById('quoteTableBody').innerHTML = tableHTML;
+        document.getElementById('selectedBadge').textContent = '已选 ' + selectedProducts + ' 项';
+        document.getElementById('oneTimeTotal').textContent = '¥' + oneTimeTotal.toLocaleString();
+        document.getElementById('subscriptionTotal').textContent = '¥' + subscriptionTotal.toLocaleString();
+        const totalAnnual = subscriptionTotal / (discountRate/100);
+        let detailText = yearCount + '年';
+        if (discountRate < 100) detailText += ' | 原价¥' + Math.round(totalAnnual).toLocaleString() + 'x' + (discountRate/10).toFixed(1) + '折';
+        document.getElementById('subscriptionDetail').textContent = detailText;
+        document.getElementById('grandTotal').textContent = '¥' + (oneTimeTotal + subscriptionTotal).toLocaleString();
+    }
+
+    // ===== 工具函数 =====
+
+    function generateOpportunitySummary() {
+        try {
+            const system = document.getElementById('businessSystem').value;
+            const isLocal = currentDeployMode === 'local';
+            const deployText = isLocal ? '本地部署' : '公有云';
+            const products = [];
+            if (document.getElementById('kuaijiesuan').checked) products.push('快结算');
+            if (document.getElementById('yinzhangtong').checked) products.push('银账通');
+            if (document.getElementById('dianpiaotong').checked) products.push('电票通');
+            if (document.getElementById('shoukuan').checked) products.push('收款通');
+            if (document.getElementById('rongzi').checked) products.push('融资通');
+            if (document.getElementById('touzi').checked) products.push('投资通');
+            const count = parseInt(document.getElementById('bankCount').value) || 0;
+            const subscription = document.getElementById('subscriptionTotal').textContent;
+
+            let summary;
+            if (currentQuoteMode === 'product') {
+                summary = system + '（' + deployText + '）+ ' + products.join('、') + '，产品维度报价，预估订阅费用' + subscription;
+            } else {
+                summary = system + '（' + deployText + '）+ ' + products.join('、') + ' + ' + count + '家，预估订阅费用' + subscription;
+            }
+
+            navigator.clipboard.writeText(summary).then(function() {
+                showToast('商机摘要已生成并复制到剪贴板');
+            }).catch(function(err) {
+                console.warn('[Quote] Clipboard API failed:', err);
+                const textarea = document.createElement('textarea');
+                textarea.value = summary;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast('商机摘要已生成并复制到剪贴板');
+            });
+        } catch (err) {
+            console.error('[Quote] generateOpportunitySummary error:', err);
+            showToast('生成商机摘要失败：' + err.message);
+        }
+    }
+
+    function resetQuote() {
+        document.getElementById('businessSystem').value = 'YonBIP旗舰版';
+        document.getElementById('bankCount').value = '1';
+        document.getElementById('operatorCount').value = '1';
+        document.getElementById('yearCount').value = '1';
+        document.getElementById('discountRate').value = '100';
+        document.getElementById('financeCheck').checked = false;
+        setDeployMode('public');
+        setQuoteMode('bank');
+        handleSystemChange();
+        showToast('报价参数已重置');
+    }
+
+    function exportQuote() {
+        const system = document.getElementById('businessSystem').value;
+        const isFinance = currentVersion === 'finance';
+        const isLocal = currentDeployMode === 'local';
+        const count = parseInt(document.getElementById('bankCount').value) || 0;
+        const operatorCount = parseInt(document.getElementById('operatorCount').value) || 0;
+        const yearCount = parseInt(document.getElementById('yearCount').value) || 1;
+        const discountRate = parseInt(document.getElementById('discountRate').value) || 100;
+        const oneTime = document.getElementById('oneTimeTotal').textContent;
+        const subscription = document.getElementById('subscriptionTotal').textContent;
+        const total = document.getElementById('grandTotal').textContent;
+
+        // 推荐方案计算（修复3：基于1年无折扣原始订阅费用）
+        const annualBase = window._annualBaseSubscription || 0;
+        const rawOneTimeTotal = parseFloat(document.getElementById('oneTimeTotal').textContent.replace(/[\u00A5,]/g, '')) || 0;
+
+        // 1年基础方案
+        const plan1SubTotal = '\u00A5' + Math.round(annualBase).toLocaleString('zh-CN');
+        const plan1Total = '\u00A5' + Math.round(annualBase + rawOneTimeTotal).toLocaleString('zh-CN');
+
+        // 3年9折方案
+        const plan3SubRaw = Math.round(annualBase * 3 * 0.9);
+        const plan3TotalRaw = plan3SubRaw + rawOneTimeTotal;
+        const plan3SubTotal = '\u00A5' + plan3SubRaw.toLocaleString('zh-CN');
+        const plan3Total = '\u00A5' + plan3TotalRaw.toLocaleString('zh-CN');
+
+        // 5年8折方案
+        const plan5SubRaw = Math.round(annualBase * 5 * 0.8);
+        const plan5TotalRaw = plan5SubRaw + rawOneTimeTotal;
+        const plan5SubTotal = '\u00A5' + plan5SubRaw.toLocaleString('zh-CN');
+        const plan5Total = '\u00A5' + plan5TotalRaw.toLocaleString('zh-CN');
+
+        const ukeyModeEl = document.querySelector('input[name="ukeyMode"]:checked');
+        const ukeyMode = ukeyModeEl ? ukeyModeEl.value : 'hosted';
+        const cloudModeEl = document.querySelector('input[name="cloudMode"]:checked');
+        const cloudMode = cloudModeEl ? cloudModeEl.value : 'public';
+        const deployText = isLocal ? '本地部署' : (cloudMode === 'public' ? '公有云' : '本地部署');
+        const ukeyText = currentConfig.needUKey ? (ukeyMode === 'hosted' ? '托管' : '自持') : '不需要';
+        let needESign;
+        if (currentDeployMode === 'local') {
+            // 银企联本地部署 + 业务系统本地部署 → 不需要
+            needESign = false;
+        } else {
+            // 银企联公有云
+            if (cloudMode === 'public') {
+                // 业务系统公有云
+                if (ukeyMode === 'hosted') {
+                    needESign = false;  // 公有云+托管 → 不需要
+                } else {
+                    needESign = true;   // 公有云+自持 → 需要
+                }
+            } else {
+                // 业务系统本地部署
+                const noESignSystems = ['YonBIP旗舰版', 'YonBIP超级版', 'U8 Cloud'];
+                if (noESignSystems.includes(system) && ukeyMode === 'hosted') {
+                    needESign = false;  // 旗舰版/超级版/U8C + 本地部署 + 托管 → 不需要
+                } else {
+                    needESign = true;   // 其他系统 + 本地部署 + 托管，或任何系统 + 本地部署 + 自持 → 需要
+                }
+            }
+        }
+
+        const products = [];
+        if (document.getElementById('kuaijiesuan').checked) products.push('快结算');
+        if (document.getElementById('yinzhangtong').checked) products.push('银账通');
+        if (document.getElementById('dianpiaotong').checked) products.push('电票通');
+        if (document.getElementById('shoukuan').checked) products.push('收款通');
+
+        const required = getRequiredModules();
+        const serverCount = currentQuoteMode === 'bank' && ukeyMode === 'self' ? Math.ceil(count / SERVER_CAPACITY) : 0;
+
+        let quoteBody = document.getElementById('quoteTableBody').innerHTML;
+        quoteBody = quoteBody.replace(/color:var\(--primary\)/g, 'color:#667eea').replace(/color:var\(--danger\)/g, 'color:#ef4444').replace(/color:var\(--success\)/g, 'color:#10b981');
+
+        const html = '<html xmlns:o=\'urn:schemas-microsoft-com:office:office\' xmlns:w=\'urn:schemas-microsoft-com:office:word\' xmlns=\'http://www.w3.org/TR/REC-html40\'>' +
+        '<head>' +
+            '<meta charset="utf-8">' +
+            '<title>用友银企联产品报价单</title>' +
+            '<style>' +
+                'body { font-family: \'Microsoft YaHei\', SimSun, sans-serif; font-size: 12pt; line-height: 1.6; }' +
+                '.header { text-align: center; border-bottom: 3px solid #667eea; padding-bottom: 20px; margin-bottom: 30px; }' +
+                '.header h1 { color: #667eea; font-size: 24pt; margin-bottom: 10px; }' +
+                '.section { margin-bottom: 25px; }' +
+                '.section-title { font-size: 14pt; font-weight: bold; color: #333; border-left: 4px solid #667eea; padding-left: 10px; margin-bottom: 15px; }' +
+                'table { width: 100%; border-collapse: collapse; margin: 15px 0; }' +
+                'th { background: #667eea; color: white; padding: 10px; text-align: left; border: 1px solid #ccc; }' +
+                'td { padding: 8px; border: 1px solid #ccc; }' +
+                '.info-table td { border: none; border-bottom: 1px dashed #ccc; padding: 8px 0; }' +
+                '.total { text-align: center; font-size: 18pt; font-weight: bold; color: #667eea; padding: 20px; background: #f0f4ff; border-radius: 10px; margin: 20px 0; }' +
+                '.footer { text-align: center; color: #999; font-size: 10pt; border-top: 1px solid #eee; padding-top: 20px; margin-top: 40px; }' +
+            '<\/style>' +
+        '<\/head>' +
+        '<body>' +
+            '<div class="header">' +
+                '<h1>用友银企联产品报价单</h1>' +
+                '<p>生成时间：' + new Date().toLocaleString() + '</p>' +
+            '</div>' +
+            '<div class="section">' +
+                '<div class="section-title">报价参数</div>' +
+                '<table class="info-table">' +
+                    '<tr><td style="width:50%;"><strong>业务系统：</strong>' + system + '</td><td><strong>业务系统部署：</strong>' + deployText + '</td></tr>' +
+                    '<tr><td><strong>银行UKey：</strong>' + ukeyText + '</td><td><strong>E路签：</strong>' + (needESign ? '需要' : '不需要') + '</td></tr>' +
+                    '<tr><td><strong>订阅年限：</strong>' + yearCount + '年</td><td><strong>折扣率：</strong>' + discountRate + '%（仅订阅类）</td></tr>' +
+                    (currentQuoteMode === 'bank' ? '<tr><td><strong>' + (isFinance ? '财资或司库系统个数' : '直联银行个数') + '：</strong>' + count + (isFinance ? '个' : '家') + '</td><td><strong>操作员个数：</strong>' + operatorCount + '个</td></tr>' : '<tr><td><strong>报价维度：</strong>产品维度</td><td><strong>操作员个数：</strong>' + operatorCount + '个</td></tr>') +
+                    (serverCount > 0 ? '<tr><td colspan="2"><strong>银行定制服务器：</strong>' + serverCount + '台（每台支持15家银行）</td></tr>' : '') +
+                '</table>' +
+                '<p><strong>已选产品：</strong>' + (products.join('、') || '未选') + '</p>' +
+                (required.length > 0 ? '<p><strong>必选模块：</strong>' + required.join('、') + '</p>' : '') +
+            '</div>' +
+            '<div class="section">' +
+                '<div class="section-title">报价明细</div>' +
+                '<table>' +
+                    '<tr><th style="width:8%;">序号</th><th style="width:25%;">产品名称</th><th style="width:15%;">单价</th><th style="width:12%;">数量</th><th style="width:20%;">小计</th><th style="width:20%;">商务模式</th></tr>' +
+                    quoteBody +
+                '</table>' +
+            '</div>' +
+            '<div class="section">' +
+                '<table>' +
+                    '<tr><td style="width:50%;"><strong>一次性采购（硬件，无折扣）</strong></td><td style="text-align:right;color:#ed8936;font-weight:bold;">' + oneTime + '</td></tr>' +
+                    '<tr><td><strong>' + (isLocal ? '本地部署订阅' : '公有云订阅') + '（' + yearCount + '年，含折扣）</strong></td><td style="text-align:right;color:#667eea;font-weight:bold;">' + subscription + '</td></tr>' +
+                '</table>' +
+                '<div class="total">合计费用：' + total + '</div>' +
+            '</div>' +
+            '<div class="section">' +
+                '<div class="section-title">&#x1F4A1; 推荐方案：年限阶梯优惠</div>' +
+                '<p style="color: #666; font-size: 11pt; margin-bottom: 12px;">根据贵司业务规模与长期规划，我们准备了三档合作方案供选择。折扣仅适用于订阅类产品，硬件及一次性投入不参与折扣。</p>' +
+                '<table>' +
+                    '<tr style="background: #f8fafc;">' +
+                        '<th style="width:20%;">合作方案</th>' +
+                        '<th style="width:15%;">年限</th>' +
+                        '<th style="width:15%;">订阅折扣</th>' +
+                        '<th style="width:25%;">订阅费用（累计）</th>' +
+                        '<th style="width:25%;">方案总投入</th>' +
+                    '</tr>' +
+                    '<tr>' +
+                        '<td><strong>基础方案</strong></td>' +
+                        '<td>1年</td>' +
+                        '<td>无折扣</td>' +
+                        '<td>' + plan1SubTotal + '</td>' +
+                        '<td>' + plan1Total + '</td>' +
+                    '</tr>' +
+                    '<tr style="background: #eff6ff;">' +
+                        '<td><strong>优选方案 &#x2B50;</strong></td>' +
+                        '<td>3年</td>' +
+                        '<td>9折</td>' +
+                        '<td>' + plan3SubTotal + '</td>' +
+                        '<td><strong style="color: #667eea;">' + plan3Total + '</strong></td>' +
+                    '</tr>' +
+                    '<tr style="background: #f0fdf4;">' +
+                        '<td><strong>战略方案 &#x2B50;&#x2B50;</strong></td>' +
+                        '<td>5年</td>' +
+                        '<td>8折</td>' +
+                        '<td>' + plan5SubTotal + '</td>' +
+                        '<td><strong style="color: #10b981;">' + plan5Total + '</strong></td>' +
+                    '</tr>' +
+                '</table>' +
+                '<div style="margin-top: 16px; padding: 16px; background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 8px; font-size: 11pt; color: #92400e; line-height: 1.8;">' +
+                    '<p><strong>&#x1F4CC; 方案价值说明：</strong></p>' +
+                    '<p>1. <strong>锁定长期成本</strong>：选择3年或5年方案，可提前锁定订阅单价，规避未来调价风险，预算更可控；</p>' +
+                    '<p>2. <strong>折扣梯度透明</strong>：折扣规则已明确公示，不存在因人而异的价格差异，选型即选档，决策更高效；</p>' +
+                    '<p>3. <strong>获得感与主动权</strong>：年限越长，优惠力度越大，这是贵司通过合作深度"争取到的权益"，而非无底线的价格让步；</p>' +
+                    '<p>4. <strong>聚焦价值而非价格</strong>：建议将讨论焦点从"单年单价"转向"长期合作价值"，年限方案本身已是最优商务诚意。</p>' +
+                '</div>' +
+                '<p style="font-size: 10pt; color: #999; margin-top: 12px;">* 以上方案为基于当前配置的推荐测算，最终商务条款以正式合同为准。</p>' +
+            '</div>' +
+            '<div class="section">' +
+                '<div class="section-title">部署架构说明</div>' +
+                '<p><strong>部署模式：</strong>' + system + '(' + deployText + ') + ' + (ukeyText !== '不需要' ? ukeyText + '银行UKey' : '无需UKey') + (needESign ? ' + E路签' : '') + '</p>' +
+                '<p>当前配置' + (needESign ? '使用E路签进行安全加密，确保数据传输安全。' : '采用云原生安全方案，无需额外硬件加密设备。') + '</p>' +
+                (serverCount > 0 ? '<p><strong>服务器配置：</strong>使用' + serverCount + '台银行定制服务器，每台可支持15家银行账户接入。</p>' : '') +
+                '<p><strong>折扣说明：</strong>折扣率仅适用于订阅类产品（快结算、银账通等及证书服务），硬件类产品（E路签、U盾、服务器）不参与折扣。</p>' +
+            '</div>' +
+            '<div class="footer">' +
+                '<p>本报价仅供参考，最终价格以商务合同为准</p>' +
+                '<p>用友网络科技股份有限公司 | 银企联产品部</p>' +
+            '</div>' +
+        '<\/body>' +
+        '<\/html>';
+
+        const blob = new Blob([html], { type: 'application/msword' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = '银企联报价单_' + (isFinance ? '财资版' : '标准版') + '_' + new Date().getTime() + '.doc';
+        a.click();
+        showToast('报价单已导出');
+    }
+
+    function toggleCollapse(elementId) {
+        const el = document.getElementById(elementId);
+        if (el) el.classList.toggle('collapsed');
+    }
+
+    // ===== 初始化 =====
+    async function init() {
+        try {
+            if (typeof initDB === 'function') {
+                await initDB();
+            }
+        } catch (e) {
+            console.warn('[Quote] initDB failed:', e);
+        }
+        handleSystemChange();
+        updateQuote();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() { init().catch(console.error); });
+    } else {
+        init();
+    }
+
+    // ===== 暴露全局接口（供HTML onclick 和父页面调用） =====
+    window.quoteModule = {
+        setDeployMode: setDeployMode,
+        setQuoteMode: setQuoteMode,
+        toggleFinanceVersion: toggleFinanceVersion,
+        handleSystemChange: handleSystemChange,
+        setUKeyMode: setUKeyMode,
+        toggleProduct: toggleProduct,
+        updateQuote: updateQuote,
+        toggleCollapse: toggleCollapse,
+        generateOpportunitySummary: generateOpportunitySummary,
+        resetQuote: resetQuote,
+        exportQuote: exportQuote
+    };
+
+    // ==================== 暴露函数到window供父页面调用 ====================
+    window.resetQuote = resetQuote;
+    window.generateOpportunitySummary = generateOpportunitySummary;
+    window.exportQuote = exportQuote;
+    window.setDeployMode = setDeployMode;
+    window.toggleFinanceVersion = toggleFinanceVersion;
+    window.toggleProduct = toggleProduct;
+    window.handleSystemChange = handleSystemChange;
+    window.setUKeyMode = setUKeyMode;
+    window.updateQuote = updateQuote;
+    window.validateQtyInput = validateQtyInput;
+    window.validateBankCount = validateBankCount;
+    window.validateDiscount = validateDiscount;
+})();
+</script>
+    </div>
+
+    <!-- Shared Scripts from parent (load them in iframe too for standalone use) -->
+    <script src="./shared/db.js"></script>
+    <script src="./shared/common.js"></script>
+    <script>
+        // PostMessage handler for commands from parent page
+        window.addEventListener('message', function(e) {
+            if (e.source !== window.parent) return;
+            console.log('[Quote] received message:', e.data);
+            if (e.data && e.data.type === 'cmd' && typeof window[e.data.cmd] === 'function') {
+                console.log('[Quote] executing cmd:', e.data.cmd);
+                window[e.data.cmd]();
+            } else if (e.data && e.data.type === 'cmd') {
+                console.warn('[Quote] cmd not found or not a function:', e.data.cmd, typeof window[e.data.cmd]);
+            }
+            if (e.data && e.data.type === 'file' && typeof window.handleParentFile === 'function') {
+                window.handleParentFile(e.data.name, e.data.data);
+            }
+        });
+
+        // Helper to update parent page badges
+
+        window.updateParentBadge = function(id, value) {
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'updateBadge', id: id, value: value }, '*');
+            }
+        };
+
+        // Helper to show data alert on parent
+        window.showParentAlert = function(show) {
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'showAlert', show: show }, '*');
+            }
+        };
+    </script>
+</body>
+</html>
